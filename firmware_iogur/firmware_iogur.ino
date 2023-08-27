@@ -63,8 +63,9 @@ float PID(float temp_aim)
     aquece até lá se necessário 
     */
     // Serial.println(temp_aim);
-      float spValue = temp_aim; //leitura do valor de potenciometro
-      float pvValue = analogRead(pin_pv); //leitura do valor de setpoint (Sensor temp)
+      sensors.requestTemperatures();
+      float pvValue = sensors.getTempCByIndex(0); //leitura do valor de setpoint (Sensor temp)      
+      float spValue = temp_aim;
 
       erro = pvValue - spValue;
         
