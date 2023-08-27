@@ -12,7 +12,6 @@ Library: OneWire.h
 //PINS
 const int START_PIN = 4; 
 const int pin_mv = 9; // PWM
-const int pin_pv = A4; //Pino de entrada para o variável medida
 const int MIX_PIN = 2;
 const int DS18B20_PIN = 3; // Pino do sensor
 const int BUZZER_PIN = 10; // Pino do buzzer
