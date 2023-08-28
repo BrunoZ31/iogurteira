@@ -12,6 +12,7 @@ Library: OneWire.h
 //PINS
 const int START_PIN = 4; 
 const int pin_mv = 9; // PWM
+const int pin_pv = A4; //Pino de entrada para o variável medida
 const int MIX_PIN = 2;
 const int DS18B20_PIN = 3; // Pino do sensor
 const int BUZZER_PIN = 10; // Pino do buzzer
@@ -21,7 +22,7 @@ float initial_temp; // temperatura inicial
 
 //PID
 float interrupt_s = 1/1000; // tempo do interrupt em s
-float kp = 0.01;  //constante ganho proporcional
+float kp = 0.1;  //constante ganho proporcional
 float Ti = 0.5;   //Tempo Integral
 float Td = .1;    //Tempo Integral
 float erro = 0;   //Erro
@@ -31,6 +32,7 @@ float S = 0;    //Integrador
 float I = 0;    //Ação Integral
 float D = 0;    //Ação Integral
 float acao; 
+float dif_t;
 
 const int lim_int_sup = 29000;
 const int lim_int_inf = -29000;
@@ -62,12 +64,15 @@ float PID(float temp_aim)
     aquece até lá se necessário 
     */
     // Serial.println(temp_aim);
-      sensors.requestTemperatures();
-      float pvValue = sensors.getTempCByIndex(0); //leitura do valor de setpoint (Sensor temp)      
+      float pvValue = readTemperature(); //leitura do valor de setpoint (Sensor temp)      
       float spValue = temp_aim;
 
-      erro = pvValue - spValue;
-        
+      erro = spValue - pvValue;
+      Serial.print("temp_aim:");
+      Serial.println(temp_aim);
+
+      Serial.print("erro:");
+      Serial.println(erro);
       P = erro * kp;
       
       S += erro;    //fórmula do integrador
@@ -92,7 +97,9 @@ float PID(float temp_aim)
       // Serial.print("I: ");
       // Serial.println(I);
       analogWrite(pin_mv, acao); //linha principal para ação na variável manipulada
-	}
+      Serial.print("acao:");
+      Serial.println(acao);
+  }
 
 // Função para ler a temperatura do sensor:
 float readTemperature() {
@@ -114,7 +121,7 @@ void buzzer(int val){
 }
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
   // inicialization pins
   pinMode(START_PIN, INPUT); //START switch pin
   pinMode(MIX_PIN,INPUT);
@@ -134,16 +141,21 @@ void loop() {
     
     if(first_loop){
       temp = readTemperature();
-      PID(95);
-      Serial.print(" temp: ");
+      PID(90);
+      Serial.print(" temp:");
       Serial.println(temp);
       // se a temperatura estiver entre 95
-      if (temp > 29 && loop_once_first){
+      if (temp > 89 && loop_once_first){
         time_95 = millis();  // calcula tempo
         loop_once_first = 0;      
       }
 
-      if ((millis() - time_95 > 1*60*1000) && !loop_once_first){ //depois de 5 minutos
+      if (!loop_once_first){
+        Serial.println(millis() - time_95);
+        dif_t = (millis() - time_95);
+        }
+      if ((dif_t > (3*60*10000)) && !loop_once_first){ //depois de 5 minutos
+        Serial.println(millis() - time_95);
         first_loop = 0;
         second_loop = 1;
         loop_once_second = 1;
@@ -154,6 +166,8 @@ void loop() {
     if(second_loop){
         temp = readTemperature();
         PID(45);
+        Serial.print(" temp:");
+        Serial.println(temp);
         
         if(loop_once_second && temp < 46){
           buzzer(0);
@@ -175,7 +189,7 @@ void loop() {
         loop_once_third = 0;      
       }
 
-      if (millis() - time_45 > 6*60*60*1000 && !loop_once_third){ //depois de 6 horas
+      if (millis() - time_45 > 6*60*60*10000 && !loop_once_third){ //depois de 6 horas
         third_loop = 0;
         buzzer(1);
         begin = 0;
